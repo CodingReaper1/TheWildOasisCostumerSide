@@ -1,6 +1,8 @@
-export default function Page() {
-  // CHANGE
-  const reservationId = 23;
+import { editReservation } from "@/app/_lib/actions";
+import Button from "./Button";
+
+export default async function Page({ params }) {
+  const reservationId = params.reservationId;
   const maxCapacity = 23;
 
   return (
@@ -9,7 +11,10 @@ export default function Page() {
         Edit Reservation #{reservationId}
       </h2>
 
-      <form className="bg-primary-900 py-8 px-12 text-lg flex gap-6 flex-col">
+      <form
+        action={editReservation}
+        className="bg-primary-900 py-8 px-12 text-lg flex gap-6 flex-col"
+      >
         <div className="space-y-2">
           <label htmlFor="numGuests">How many guests?</label>
           <select
@@ -38,11 +43,14 @@ export default function Page() {
             className="px-5 py-3 bg-primary-200 text-primary-800 w-full shadow-sm rounded-sm"
           />
         </div>
+        <input
+          name="reservationId"
+          className="hidden"
+          defaultValue={reservationId}
+        />
 
         <div className="flex justify-end items-center gap-6">
-          <button className="bg-accent-500 px-8 py-4 text-primary-800 font-semibold hover:bg-accent-600 transition-all disabled:cursor-not-allowed disabled:bg-gray-500 disabled:text-gray-300">
-            Update reservation
-          </button>
+          <Button />
         </div>
       </form>
     </div>
