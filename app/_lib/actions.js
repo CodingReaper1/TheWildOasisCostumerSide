@@ -18,7 +18,7 @@ export async function updateGuest(formData) {
 
   const updateData = { nationality, countryFlag, nationalID };
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("guests")
     .update(updateData)
     .eq("id", session.user.guestId);
@@ -30,6 +30,31 @@ export async function updateGuest(formData) {
 
 export async function signInAction() {
   await signIn("google", { redirectTo: "/account" });
+}
+
+export async function createReservation(reservationData, formData) {
+  const session = await auth();
+  if (!session) throw new Error("You must be logged in");
+
+  const newReservation = {
+    ...reservationData,
+    guestId: session.user.guestId,
+    numGuests: +formData.get("numGuests"),
+    observations: formData.get("observations").slice(0, 1000),
+    extrasPrice: 0,
+    totalPrice: reservationData.cabinPrice,
+    isPaid: false,
+    hasBreakfast: false,
+    status: "unconfirmed",
+  };
+
+  const { error } = await supabase.from("bookings").insert([newReservation]);
+
+  if (error) throw new Error("Booking could not be created");
+
+  revalidatePath(`/cabins/${reservationData.cabinId}`);
+
+  redirect("/cabins/thankyou");
 }
 
 export async function deleteReservation(bookingId) {
@@ -52,20 +77,24 @@ export async function deleteReservation(bookingId) {
   revalidatePath("/account/reservations");
 }
 
-export async function editReservation(formData) {
+export async function updateReservation(formData) {
   const session = await auth();
   if (!session) throw new Error("You must be logged in");
 
-  const numGuests = formData.get("numGuests");
   const observations = formData.get("observations");
-  const id = formData.get("reservationId");
+  const id = +formData.get("reservationId");
 
-  if (observations.length >= 300)
-    throw new Error("You are not allowed to input more than 300 chars");
-  console.log(observations.length);
+  const guestBookings = await getBookings(session.user.guestId);
+  const guestBookingIds = guestBookings.map((booking) => booking.id);
+
+  if (!guestBookingIds.includes(id))
+    throw new Error("Your are not allowed to update this booking");
+
+  if (observations.length >= 1000)
+    throw new Error("You are not allowed to input more than 1000 chars");
 
   const updatedFields = {
-    numGuests,
+    numGuests: +formData.get("numGuests"),
     observations,
   };
 
@@ -82,8 +111,9 @@ export async function editReservation(formData) {
   }
 
   revalidatePath("/account/reservations");
+  revalidatePath(`/account/reservations/edit/${id}`);
 
-  // redirect
+  redirect("/account/reservations");
 }
 
 export async function signOutAction() {

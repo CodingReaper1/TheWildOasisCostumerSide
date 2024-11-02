@@ -1,9 +1,11 @@
-import { editReservation } from "@/app/_lib/actions";
-import Button from "./Button";
+import { updateReservation } from "@/app/_lib/actions";
+import { getBooking, getCabin } from "@/app/_lib/data-service";
+import SubmitButton from "@/app/_components/SubmitButton";
 
 export default async function Page({ params }) {
-  const reservationId = params.reservationId;
-  const maxCapacity = 23;
+  const { reservationId } = params;
+  const { numGuests, observations, cabinId } = await getBooking(reservationId);
+  const { maxCapacity } = await getCabin(cabinId);
 
   return (
     <div>
@@ -12,14 +14,21 @@ export default async function Page({ params }) {
       </h2>
 
       <form
-        action={editReservation}
+        action={updateReservation}
         className="bg-primary-900 py-8 px-12 text-lg flex gap-6 flex-col"
       >
+        <input
+          name="reservationId"
+          type="hidden"
+          readOnly
+          value={reservationId}
+        />
         <div className="space-y-2">
           <label htmlFor="numGuests">How many guests?</label>
           <select
             name="numGuests"
             id="numGuests"
+            defaultValue={numGuests}
             className="px-5 py-3 bg-primary-200 text-primary-800 w-full shadow-sm rounded-sm"
             required
           >
@@ -40,17 +49,15 @@ export default async function Page({ params }) {
           </label>
           <textarea
             name="observations"
+            defaultValue={observations}
             className="px-5 py-3 bg-primary-200 text-primary-800 w-full shadow-sm rounded-sm"
           />
         </div>
-        <input
-          name="reservationId"
-          className="hidden"
-          defaultValue={reservationId}
-        />
 
         <div className="flex justify-end items-center gap-6">
-          <Button />
+          <SubmitButton pendingLabel="Updating...">
+            Updating reservation
+          </SubmitButton>
         </div>
       </form>
     </div>
